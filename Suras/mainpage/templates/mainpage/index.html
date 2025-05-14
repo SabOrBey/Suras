@@ -1,0 +1,16 @@
+{% extends "layout/base.html" %}
+{% load static %}
+{% block description %}<meta name="description" content="Начинать изучение чтение Корана самостоятельно бесплатно на арабском русском языке с нуля">{% endblock %}
+{% block title %}Чтение изучение Корана{% endblock %}
+{% block content %}
+      <div class="productRow"><!-- Each product row contains info of 3 elements -->
+        {% for Sura in Suras %}
+          <a href="{% url 'detail' Sura.pk %}">
+              <article class="productInfo"><!-- Each individual product description -->
+                <h2 class="price">Сура - {{Sura.pk}}. "{{Sura.transcript}}"</h2>
+                <h3 class="productContent">("{{Sura.translation}}")</h3>
+              </article>
+          </a>
+        {% endfor %}
+      </div>
+{% endblock %}

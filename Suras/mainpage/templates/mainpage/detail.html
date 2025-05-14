@@ -1,0 +1,34 @@
+{% extends "layout/base.html" %}
+{% load static %}
+{% block description %}Слушать читать текст суры {{Sura.transcript}} полностью и по аятам Мишари Рашид бесплатно{% endblock %}
+{% block title %}Сура {{Sura.transcript}}{% endblock %}
+{% block img %}{% endblock %}
+{% block content %}
+<h2 class="text-center text-white">{{Sura.name|default:""}}</h2>
+<h1 class="text-center text-white">{{Sura.transcript|default:""}}</h1>
+<h3 class="text-center text-white">{{Sura.translation|default:""}}</h3>
+<section class="mainContent text-white">
+    {% for Ayat in Ayats %}
+    {% if Ayat.number == 0 %}
+    <p>{{Ayat.text}}</p>
+    {% else %}
+    <p>{{Ayat.number}}) {{Ayat.text}}</p>
+    {% endif %}
+    {% if Ayat.s_id.audio %}
+    <audio class="audio-control" controls loop src="data:audio/mp3;base64,{{Ayat.audio_aiyat}}" type="audio/mp3">
+        Браузер не поддерживает аудиоэлемент
+    </audio>
+    {% endif %}
+    {% if Ayat.s_id.audio_translation %}
+    <audio class="audio-control" controls loop data-src="{{Ayat.s_id.audio_translation.url}}" type="audio/mp3">
+        Браузер не поддерживает аудиоэлемент
+    </audio>
+    {% endif %}
+    <p>{{Ayat.transcript}}</p>
+    <p>{{Ayat.translation}}</p>
+    <hr>
+    {% endfor %}
+</section>
+<script src="{% static 'mainpage/js/audiostop.js' %}"></script>
+<script src="{% static 'mainpage/js/lazy_loading.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "layout/base.html" %}
+{% load static %}
+{% block title %}{% endblock %}
+{% block img %}{% endblock %}
+{% block content %}
+<form class="position-relative text-white" method="post">
+    {% csrf_token %}
+    {{form.as_p}}
+    <audio id="audioPlayer" controls src="data:audio/mp3;base64,{{Ayats.audio_aiyat}}" type="audio/mp3">
+        Браузер не поддерживает аудиоэлемент
+    </audio>
+    <div id="currentTime"></div>
+    <p>{{Ayats.transcript}}</p>
+    <button type="submit">Найти</button>
+</form>
+<script src="{% static 'mainpage/js/script.js' %}"></script>
+{% endblock %}
