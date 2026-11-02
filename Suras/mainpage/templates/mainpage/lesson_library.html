@@ -1,0 +1,73 @@
+{% extends "layout/base.html" %}
+{% block title %}{{ section_title }} — Сура{% endblock %}
+{% block meta_description %}{{ section_description }}{% endblock %}
+{% block eyebrow %}Учебная библиотека{% endblock %}
+{% block hero_title %}{{ section_title }}{% endblock %}
+{% block hero_description %}{{ section_description }}{% endblock %}
+{% block content %}
+    <section class="section-block">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Ваш прогресс</p>
+                <h2>{{ learned_count }} из {{ lessons|length }} изучено</h2>
+            </div>
+            {% if user.is_staff %}
+                <a class="text-link" href="{% url 'admin:index' %}">Управление материалами →</a>
+            {% endif %}
+        </div>
+
+        {% if lessons %}
+            <div class="lesson-list">
+                {% for lesson in lessons %}
+                    <article class="lesson-card{% if lesson.is_learned %} lesson-card-done{% endif %}">
+                        <div class="verse-topline">
+                            <span class="eyebrow">
+                                {% if section == "hadith" %}Хадис · {{ forloop.counter }}{% else %}{{ lesson.category|default:"Дуа" }}{% endif %}
+                            </span>
+                            <form method="post" action="{% url 'toggle_lesson_completion' section lesson.pk %}">
+                                {% csrf_token %}
+                                <button class="button button-small button-secondary" type="submit">
+                                    {% if lesson.is_learned %}Изучено · отменить{% else %}Отметить изученным{% endif %}
+                                </button>
+                            </form>
+                        </div>
+                        <h2>{{ lesson.title }}</h2>
+                        {% if section == "hadith" and lesson.narrator %}
+                            <p class="subtle-text">Передатчик: {{ lesson.narrator }}</p>
+                        {% endif %}
+                        {% if section == "dua" and lesson.occasion %}
+                            <p class="subtle-text">{{ lesson.occasion }}</p>
+                        {% endif %}
+                        <p class="arabic-text" lang="ar" dir="rtl">{{ lesson.arabic_text }}</p>
+                        {% if lesson.transliteration %}<p class="transliteration">{{ lesson.transliteration }}</p>{% endif %}
+                        <p class="translation">{{ lesson.translation }}</p>
+                        {% if lesson.source %}<p class="source-note">Источник: {{ lesson.source }}</p>{% endif %}
+                        {% if lesson.audio %}
+                            <button
+                                class="text-link audio-link"
+                                type="button"
+                                data-audio-url="{{ lesson.audio.url }}"
+                                data-audio-start="0"
+                                data-audio-end=""
+                            >Слушать аудио →</button>
+                        {% endif %}
+                    </article>
+                {% endfor %}
+            </div>
+            <audio data-segment-player controls preload="metadata" hidden></audio>
+            <p class="source-note" data-audio-status role="status" aria-live="polite"></p>
+        {% else %}
+            <div class="empty-state">
+                <h2>Материалы скоро появятся</h2>
+                <p>Сейчас здесь нет опубликованных материалов. Хадисы и дуа добавляются администратором в панели управления.</p>
+                {% if user.is_staff %}
+                    <a class="button" href="{% url 'admin:index' %}">Открыть панель управления</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}
+{% block scripts %}
+    {% load static %}
+    <script defer src="{% static 'mainpage/js/audio-player.js' %}"></script>
+{% endblock %}
