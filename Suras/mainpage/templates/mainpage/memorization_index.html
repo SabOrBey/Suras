@@ -1,0 +1,31 @@
+{% extends "layout/base.html" %}
+{% block title %}Заучивание Корана — Сура{% endblock %}
+{% block meta_description %}Заучивайте Коран по одному аяту, слушайте аудио с повторами и отслеживайте свой прогресс.{% endblock %}
+{% block eyebrow %}Заучивание Корана{% endblock %}
+{% block hero_title %}Один аят за раз{% endblock %}
+{% block hero_description %}Выберите суру, слушайте аяты по отдельности и отмечайте выученные. Прогресс сохраняется в этом браузере.{% endblock %}
+{% block content %}
+    <section class="section-block">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Ваш прогресс</p>
+                <h2>Выученных аятов: {{ memorized_count }}</h2>
+            </div>
+            <a class="text-link" href="{% url 'index' %}">Читать Коран →</a>
+        </div>
+        <div class="sura-grid">
+            {% for Sura in Suras %}
+                <a class="sura-card" href="{% url 'memorize_sura' Sura.pk %}">
+                    <span class="sura-number">{{ Sura.pk }}</span>
+                    <span class="sura-card-copy">
+                        <strong>{{ Sura.transcript|default:Sura.name|default:"Сура без названия" }}</strong>
+                        <span>{{ Sura.translation|default:"Заучивание по аятам" }}</span>
+                    </span>
+                    <span class="sura-count">{{ Sura.memorized_count }} / {{ Sura.ayat_count }}</span>
+                </a>
+            {% empty %}
+                <p class="empty-state">Суры пока не добавлены.</p>
+            {% endfor %}
+        </div>
+    </section>
+{% endblock %}

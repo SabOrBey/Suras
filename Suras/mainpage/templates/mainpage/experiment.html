@@ -1,17 +1,47 @@
 {% extends "layout/base.html" %}
-{% load static %}
-{% block title %}{% endblock %}
-{% block img %}{% endblock %}
+{% block title %}Найти аят — Сура{% endblock %}
+{% block eyebrow %}Чтение Корана{% endblock %}
+{% block hero_title %}Найдите аят по номеру{% endblock %}
+{% block hero_description %}Выберите суру и номер аята, чтобы открыть его текст и аудиофрагмент.{% endblock %}
 {% block content %}
-<form class="position-relative text-white" method="post">
-    {% csrf_token %}
-    {{form.as_p}}
-    <audio id="audioPlayer" controls src="data:audio/mp3;base64,{{Ayats.audio_aiyat}}" type="audio/mp3">
-        Браузер не поддерживает аудиоэлемент
-    </audio>
-    <div id="currentTime"></div>
-    <p>{{Ayats.transcript}}</p>
-    <button type="submit">Найти</button>
-</form>
-<script src="{% static 'mainpage/js/script.js' %}"></script>
+    <section class="lesson-panel">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button class="button" type="submit">Найти аят</button>
+        </form>
+
+        {% if Ayats %}
+            <article class="verse-card">
+                <p class="verse-number">{{ Ayats.s_id.transcript }} · аят {{ Ayats.number }}</p>
+                {% if Ayats.s_id.audio %}
+                    <div class="player-panel">
+                        <span>Полная запись суры</span>
+                        <audio data-segment-player controls preload="metadata" src="{{ Ayats.s_id.audio.url }}">
+                            Браузер не поддерживает аудио.
+                        </audio>
+                    </div>
+                    {% if Ayats.audio_aiyat_begin != None and Ayats.audio_aiyat_end != None %}
+                        <button
+                            class="button button-small"
+                            type="button"
+                            data-audio-url="{{ Ayats.s_id.audio.url }}"
+                            data-audio-start="{{ Ayats.audio_aiyat_begin }}"
+                            data-audio-end="{{ Ayats.audio_aiyat_end }}"
+                        >Слушать аят</button>
+                    {% else %}
+                        <p class="source-note">Аудиофрагмент для этого аята пока не размечен.</p>
+                    {% endif %}
+                {% endif %}
+                <p class="arabic-text" lang="ar" dir="rtl">{{ Ayats.text }}</p>
+                <p class="transliteration">{{ Ayats.transcript }}</p>
+                <p class="translation">{{ Ayats.translation }}</p>
+                <p class="source-note" data-audio-status role="status" aria-live="polite"></p>
+            </article>
+        {% endif %}
+    </section>
+{% endblock %}
+{% block scripts %}
+    {% load static %}
+    <script defer src="{% static 'mainpage/js/audio-player.js' %}"></script>
 {% endblock %}
