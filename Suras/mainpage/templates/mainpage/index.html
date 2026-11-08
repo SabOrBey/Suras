@@ -9,13 +9,13 @@
         <a class="feature-card feature-card-primary" href="{% url 'index' %}">
             <span class="feature-index">01</span>
             <h2>Чтение Корана</h2>
-            <p>Открывайте суры с текстом, транскрипцией, переводом и аудио по аятам.</p>
-            <span class="text-link">Выбрать суру <span aria-hidden="true">→</span></span>
+            <p>Страница на разработке. Выбор суры и чтение аятов уже доступны в разделе заучивания.</p>
+            <span class="text-link">Страница на разработке</span>
         </a>
         <a class="feature-card" href="{% url 'memorization_index' %}">
             <span class="feature-index">02</span>
             <h2>Заучивание</h2>
-            <p>Слушайте отдельные аяты с повторами и отмечайте выученные.</p>
+            <p>Выбирайте суру и аяты, слушайте аудио выбранного фрагмента с повторами и отмечайте выученное.</p>
             <span class="text-link">Продолжить обучение <span aria-hidden="true">→</span></span>
         </a>
         <a class="feature-card" href="{% url 'lesson_library' 'hadith' %}">
@@ -35,24 +35,14 @@
     <section class="section-block" aria-labelledby="suras-heading">
         <div class="section-heading">
             <div>
-                <p class="eyebrow">Библиотека</p>
-                <h2 id="suras-heading">Суры Корана</h2>
+                <p class="eyebrow">Чтение Корана</p>
+                <h2 id="suras-heading">Страница на разработке</h2>
             </div>
-            <span class="subtle-text">Всего в каталоге: {{ Suras|length }}</span>
         </div>
-        <div class="sura-grid">
-            {% for Sura in Suras %}
-                <a class="sura-card" href="{% url 'detail' Sura.pk %}">
-                    <span class="sura-number">{{ Sura.pk }}</span>
-                    <span class="sura-card-copy">
-                        <strong>{{ Sura.transcript|default:Sura.name|default:"Сура без названия" }}</strong>
-                        <span>{{ Sura.translation|default:"Читать суру" }}</span>
-                    </span>
-                    <span class="sura-count">{{ Sura.ayat_count }} аятов</span>
-                </a>
-            {% empty %}
-                <p class="empty-state">Суры пока не добавлены.</p>
-            {% endfor %}
+        <div class="empty-state">
+            <p>Страница на разработке.</p>
+            <p>Пока что все суры, аяты и аудиозаписи собраны в разделе заучивания.</p>
+            <a class="button" href="{% url 'memorization_index' %}">Выбрать суру для заучивания</a>
         </div>
     </section>
 {% endblock %}

@@ -6,8 +6,12 @@
 
     const repeatControl = document.querySelector("[data-repeat-control]");
     const status = document.querySelector("[data-audio-status]");
-    let clipStart = 0;
-    let clipEnd = null;
+    const initialStart = Number(player.dataset.clipStartMs);
+    const initialEnd = Number(player.dataset.clipEndMs);
+    let clipStart = Number.isFinite(initialStart) ? Math.max(0, initialStart) / 1000 : 0;
+    let clipEnd = player.dataset.clipEndMs !== "" && Number.isFinite(initialEnd)
+        ? Math.max(clipStart, initialEnd / 1000)
+        : null;
     let repeatsRemaining = 0;
     let repeatForever = false;
     let pendingStart = null;
@@ -90,6 +94,24 @@
                 player.currentTime = clipEnd;
                 report("Аят прослушан.");
             }
+        }
+    });
+
+    player.addEventListener("loadedmetadata", () => {
+        if (clipEnd !== null && (player.currentTime < clipStart || player.currentTime >= clipEnd)) {
+            player.currentTime = clipStart;
+        }
+    });
+
+    player.addEventListener("play", () => {
+        if (clipEnd !== null && (player.currentTime < clipStart || player.currentTime >= clipEnd)) {
+            player.currentTime = clipStart;
+        }
+    });
+
+    player.addEventListener("seeking", () => {
+        if (clipEnd !== null && (player.currentTime < clipStart || player.currentTime >= clipEnd)) {
+            player.currentTime = clipStart;
         }
     });
 

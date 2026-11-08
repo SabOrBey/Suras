@@ -2,8 +2,9 @@ from django.db.models import Count
 from django.http import Http404, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.http import urlencode
 
-from .forms import AiyatForm
+from .forms import AiyatForm, AyatRangeForm
 from .models import Aiyat, Dua, Hadith, Sura
 
 
@@ -16,22 +17,12 @@ def _session_ids(request, key):
 
 
 def index(request):
-    suras = Sura.objects.annotate(ayat_count=Count("aiyat")).order_by("pk")
-    return render(request, "mainpage/index.html", {"Suras": suras})
+    return render(request, "mainpage/index.html")
 
 
 def detail(request, sura_id):
-    sura = get_object_or_404(Sura, pk=sura_id)
-    ayats = Aiyat.objects.filter(s_id=sura).order_by("number", "pk")
-    memorized_ids = _session_ids(request, "memorized_ayats")
-    for ayat in ayats:
-        ayat.is_memorized = ayat.pk in memorized_ids
-    context = {
-        "Ayats": ayats,
-        "Sura": sura,
-        "memorized_count": sum(ayat.is_memorized for ayat in ayats),
-    }
-    return render(request, "mainpage/detail.html", context)
+    get_object_or_404(Sura, pk=sura_id)
+    return redirect("memorize_sura", sura_id=sura_id)
 
 
 def memorization_index(request):
@@ -57,7 +48,36 @@ def memorization_index(request):
 
 def memorize_sura(request, sura_id):
     sura = get_object_or_404(Sura, pk=sura_id)
-    ayats = list(Aiyat.objects.filter(s_id=sura).order_by("number", "pk"))
+    all_ayats = Aiyat.objects.filter(s_id=sura).order_by("number", "pk")
+    ayats = list(all_ayats)
+    form = AyatRangeForm(request.GET or None)
+    range_selected = False
+    range_error = None
+    range_audio_start = None
+    range_audio_end = None
+
+    if form.is_valid():
+        begin = form.cleaned_data["begin"]
+        end = form.cleaned_data["end"]
+        first_ayat = all_ayats.filter(number=begin).first()
+        last_ayat = all_ayats.filter(number=end).last()
+        if first_ayat is None or last_ayat is None:
+            form.add_error(None, "В этой суре не найдены аяты с указанными номерами.")
+        else:
+            range_selected = True
+            ayats = list(all_ayats.filter(number__gte=begin, number__lte=end))
+            if (
+                first_ayat.audio_aiyat_begin is None
+                or last_ayat.audio_aiyat_end is None
+                or last_ayat.audio_aiyat_end <= first_ayat.audio_aiyat_begin
+            ):
+                range_error = "Для выбранного диапазона не размечены границы аудиофрагмента."
+            else:
+                range_audio_start = first_ayat.audio_aiyat_begin
+                range_audio_end = last_ayat.audio_aiyat_end
+    else:
+        ayats = list(all_ayats)
+
     memorized_ids = _session_ids(request, "memorized_ayats")
     for ayat in ayats:
         ayat.is_memorized = ayat.pk in memorized_ids
@@ -67,6 +87,11 @@ def memorize_sura(request, sura_id):
         {
             "Sura": sura,
             "Ayats": ayats,
+            "form": form,
+            "range_selected": range_selected,
+            "range_error": range_error,
+            "range_audio_start": range_audio_start,
+            "range_audio_end": range_audio_end,
             "memorized_count": sum(ayat.is_memorized for ayat in ayats),
         },
     )
@@ -84,7 +109,11 @@ def toggle_memorized_ayat(request, sura_id, ayat_id):
     else:
         memorized_ids.add(ayat.pk)
     request.session["memorized_ayats"] = sorted(memorized_ids)
-    return redirect("memorize_sura", sura_id=sura.pk)
+    response = redirect("memorize_sura", sura_id=sura.pk)
+    range_form = AyatRangeForm(request.GET)
+    if range_form.is_valid():
+        response["Location"] += f"?{urlencode(range_form.cleaned_data)}"
+    return response
 
 
 def lesson_library(request, section):

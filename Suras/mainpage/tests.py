@@ -41,24 +41,88 @@ class LearningPagesTests(TestCase):
             source="Тестовый источник",
         )
 
-    def test_homepage_links_to_all_four_learning_sections(self):
+    def test_homepage_marks_reading_as_in_development_and_links_to_memorization(self):
         response = self.client.get(reverse("index"))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Чтение Корана")
+        self.assertContains(response, "Страница на разработке")
         self.assertContains(response, "Заучивание")
         self.assertContains(response, "Хадисы")
         self.assertContains(response, "Дуа")
-        self.assertContains(response, "Аль-Фатиха")
+        self.assertNotContains(response, "Суры Корана")
 
-    def test_reading_page_renders_verse_audio_timestamps(self):
+    def test_old_sura_detail_route_redirects_to_memorization(self):
         response = self.client.get(reverse("detail", args=[self.sura.pk]))
 
+        self.assertRedirects(response, reverse("memorize_sura", args=[self.sura.pk]))
+
+    def test_memorization_shows_only_selected_ayat_and_limits_audio_to_them(self):
+        second_ayat = Aiyat.objects.create(
+            s_id=self.sura,
+            number=2,
+            text="الْحَمْدُ لِلَّهِ",
+            audio_aiyat_begin=4200,
+            audio_aiyat_end=6700,
+        )
+        Aiyat.objects.create(s_id=self.sura, number=3, text="Аят вне выбранного диапазона")
+
+        response = self.client.get(
+            reverse("memorize_sura", args=[self.sura.pk]),
+            {"begin": 1, "end": 2},
+        )
+
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Аяты 1–2")
         self.assertContains(response, "Бисмилляхи")
-        self.assertContains(response, 'data-audio-start="1500"')
-        self.assertContains(response, 'data-audio-end="4200"')
-        self.assertContains(response, "Слушать перевод")
+        self.assertContains(response, second_ayat.text)
+        self.assertNotContains(response, "Аят вне выбранного диапазона")
+        self.assertContains(response, 'data-clip-start-ms="1500"')
+        self.assertContains(response, 'data-clip-end-ms="6700"')
+        self.assertContains(response, "Слушать выбранный фрагмент")
+
+        toggle_url = reverse("toggle_memorized_ayat", args=[self.sura.pk, second_ayat.pk])
+        toggle_response = self.client.post(f"{toggle_url}?begin=1&end=2")
+
+        self.assertRedirects(
+            toggle_response,
+            f"{reverse('memorize_sura', args=[self.sura.pk])}?begin=1&end=2",
+        )
+
+    def test_memorization_rejects_reversed_ayat_range(self):
+        response = self.client.get(
+            reverse("memorize_sura", args=[self.sura.pk]),
+            {"begin": 2, "end": 1},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Начальный аят не может быть больше конечного.")
+
+    def test_memorization_rejects_a_range_with_unknown_ayat_numbers(self):
+        response = self.client.get(
+            reverse("memorize_sura", args=[self.sura.pk]),
+            {"begin": 1, "end": 7},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "не найдены аяты с указанными номерами")
+
+    def test_selected_range_without_timestamps_does_not_show_full_surah_player(self):
+        Aiyat.objects.create(s_id=self.sura, number=2, text="Аят без аудиометок")
+
+        response = self.client.get(
+            reverse("memorize_sura", args=[self.sura.pk]),
+            {"begin": 2, "end": 2},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Дорожка всей суры не будет воспроизводиться")
+        self.assertNotContains(response, "Слушать выбранный фрагмент")
+
+    def test_reading_page_redirects_to_memorization(self):
+        response = self.client.get(reverse("detail", args=[self.sura.pk]))
+
+        self.assertRedirects(response, reverse("memorize_sura", args=[self.sura.pk]))
 
     def test_memorized_ayat_progress_is_stored_in_each_browser_session(self):
         toggle_url = reverse("toggle_memorized_ayat", args=[self.sura.pk, self.ayat.pk])
