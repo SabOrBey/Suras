@@ -89,6 +89,27 @@ class LearningPagesTests(TestCase):
             f"{reverse('memorize_sura', args=[self.sura.pk])}?begin=1&end=2",
         )
 
+    def test_memorization_can_start_at_ayat_zero(self):
+        zero_ayat = Aiyat.objects.create(
+            s_id=self.sura,
+            number=0,
+            text="بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+            audio_aiyat_begin=0,
+            audio_aiyat_end=1500,
+        )
+
+        response = self.client.get(
+            reverse("memorize_sura", args=[self.sura.pk]),
+            {"begin": 0, "end": 1},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, zero_ayat.text)
+        self.assertContains(response, "Бисмилляхи")
+        self.assertContains(response, "Аяты 0–1")
+        self.assertContains(response, 'data-clip-start-ms="0"')
+        self.assertContains(response, 'data-clip-end-ms="4200"')
+
     def test_memorization_rejects_reversed_ayat_range(self):
         response = self.client.get(
             reverse("memorize_sura", args=[self.sura.pk]),

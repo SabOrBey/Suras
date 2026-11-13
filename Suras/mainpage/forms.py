@@ -7,12 +7,12 @@ from .models import Aiyat
 class AyatRangeForm(forms.Form):
     begin = forms.IntegerField(
         label="С аята",
-        min_value=1,
-        widget=forms.NumberInput(attrs={"placeholder": "Например, 1"}),
+        min_value=0,
+        widget=forms.NumberInput(attrs={"placeholder": "0 или 1"}),
     )
     end = forms.IntegerField(
         label="По аят",
-        min_value=1,
+        min_value=0,
         widget=forms.NumberInput(attrs={"placeholder": "Например, 7"}),
     )
 
