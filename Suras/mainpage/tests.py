@@ -110,6 +110,16 @@ class LearningPagesTests(TestCase):
         self.assertContains(response, 'data-clip-start-ms="0"')
         self.assertContains(response, 'data-clip-end-ms="4200"')
 
+    def test_only_the_start_ayat_field_accepts_zero(self):
+        response = self.client.get(
+            reverse("memorize_sura", args=[self.sura.pk]),
+            {"begin": 0, "end": 0},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["range_selected"])
+        self.assertIn("end", response.context["form"].errors)
+
     def test_memorization_rejects_reversed_ayat_range(self):
         response = self.client.get(
             reverse("memorize_sura", args=[self.sura.pk]),
@@ -128,7 +138,7 @@ class LearningPagesTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "не найдены аяты с указанными номерами")
 
-    def test_selected_range_without_timestamps_does_not_show_full_surah_player(self):
+    def test_selected_range_without_timestamps_keeps_full_surah_player_visible(self):
         Aiyat.objects.create(s_id=self.sura, number=2, text="Аят без аудиометок")
 
         response = self.client.get(
@@ -137,7 +147,9 @@ class LearningPagesTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Дорожка всей суры не будет воспроизводиться")
+        self.assertContains(response, "Полная аудиодорожка суры доступна в плеере.")
+        self.assertContains(response, '<div class="player-panel">')
+        self.assertContains(response, 'src="/media/audio/001.mp3"')
         self.assertNotContains(response, "Слушать выбранный фрагмент")
 
     def test_reading_page_redirects_to_memorization(self):

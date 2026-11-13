@@ -47,42 +47,38 @@
             </label>
         </div>
         {% if Sura.audio %}
-            {% if range_selected and range_audio_start == None %}
-                <p class="source-note" role="status">Для выбранного диапазона не размечены границы аудиофрагмента. Дорожка всей суры не будет воспроизводиться; используйте аудио отдельных размеченных аятов.</p>
-                <audio data-segment-player controls preload="metadata" src="{{ Sura.audio.url }}" hidden>
+            <div class="player-panel">
+                <span>
+                    {% if range_selected and range_audio_start != None and range_audio_end != None %}
+                            Аудиофрагмент: аяты {{ form.cleaned_data.begin }}–{{ form.cleaned_data.end }}
+                    {% else %}
+                        Аудиочтение {{ Sura.transcript|default:"суры" }}
+                    {% endif %}
+                </span>
+                <audio
+                    data-segment-player
+                    controls
+                    preload="metadata"
+                    src="{{ Sura.audio.url }}"
+                    {% if range_audio_start != None and range_audio_end != None %}
+                        data-clip-start-ms="{{ range_audio_start }}"
+                        data-clip-end-ms="{{ range_audio_end }}"
+                    {% endif %}
+                >
                     Браузер не поддерживает аудио.
                 </audio>
-            {% else %}
-                <div class="player-panel">
-                    <span>
-                        {% if range_selected %}
-                            Аудиофрагмент: аяты {{ form.cleaned_data.begin }}–{{ form.cleaned_data.end }}
-                        {% else %}
-                            Аудиочтение {{ Sura.transcript|default:"суры" }}
-                        {% endif %}
-                    </span>
-                    <audio
-                        data-segment-player
-                        controls
-                        preload="metadata"
-                        src="{{ Sura.audio.url }}"
-                        {% if range_audio_start != None and range_audio_end != None %}
-                            data-clip-start-ms="{{ range_audio_start }}"
-                            data-clip-end-ms="{{ range_audio_end }}"
-                        {% endif %}
-                    >
-                        Браузер не поддерживает аудио.
-                    </audio>
-                    {% if range_selected %}
-                        <button
-                            class="button button-small"
-                            type="button"
-                            data-audio-url="{{ Sura.audio.url }}"
-                            data-audio-start="{{ range_audio_start }}"
-                            data-audio-end="{{ range_audio_end }}"
-                        >Слушать выбранный фрагмент</button>
-                    {% endif %}
-                </div>
+                {% if range_selected and range_audio_start != None and range_audio_end != None %}
+                    <button
+                        class="button button-small"
+                        type="button"
+                        data-audio-url="{{ Sura.audio.url }}"
+                        data-audio-start="{{ range_audio_start }}"
+                        data-audio-end="{{ range_audio_end }}"
+                    >Слушать выбранный фрагмент</button>
+                {% endif %}
+            </div>
+            {% if range_selected and range_audio_start == None %}
+                <p class="source-note" role="status">Для выбранного диапазона не размечены границы фрагмента. Полная аудиодорожка суры доступна в плеере.</p>
             {% endif %}
         {% else %}
             <p class="empty-state">Для этой суры аудио пока не загружено.</p>

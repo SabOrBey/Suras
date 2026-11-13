@@ -12,7 +12,7 @@ class AyatRangeForm(forms.Form):
     )
     end = forms.IntegerField(
         label="По аят",
-        min_value=0,
+        min_value=1,
         widget=forms.NumberInput(attrs={"placeholder": "Например, 7"}),
     )
 
