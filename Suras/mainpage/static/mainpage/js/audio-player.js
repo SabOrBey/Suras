@@ -16,6 +16,7 @@
     let repeatsRemaining = 0;
     let repeatForever = false;
     let runInitialized = false;
+    let waitingForRepeatSeek = false;
     let pendingStart = null;
 
     const report = (message) => {
@@ -89,12 +90,21 @@
         if (!repeatForever) {
             repeatsRemaining -= 1;
         }
+        waitingForRepeatSeek = true;
+        player.pause();
+        player.addEventListener("seeked", () => {
+            waitingForRepeatSeek = false;
+            player.play().catch(() => report("Не удалось продолжить воспроизведение."));
+        }, { once: true });
         player.currentTime = clipStart;
-        player.play().catch(() => report("Не удалось продолжить воспроизведение аудио."));
         return true;
     };
 
     const handlePlaybackEnd = () => {
+        if (waitingForRepeatSeek) {
+            return;
+        }
+
         if (clipRequired && clipEnd === null) {
             player.pause();
             runInitialized = false;
@@ -102,7 +112,7 @@
             return;
         }
 
-        if (clipEnd !== null && player.currentTime < clipEnd) {
+        if (clipEnd !== null && player.currentTime < clipEnd && !player.ended) {
             return;
         }
 

@@ -81,6 +81,7 @@ class LearningPagesTests(TestCase):
         self.assertContains(response, 'data-clip-end-ms="6700"')
         self.assertContains(response, "Повторять выбранный диапазон")
         self.assertContains(response, '<option value="3" selected>3 раза</option>')
+        self.assertContains(response, '<option value="10">10 раз</option>')
         self.assertContains(response, "Слушать выбранный фрагмент")
 
         toggle_url = reverse("toggle_memorized_ayat", args=[self.sura.pk, second_ayat.pk])
