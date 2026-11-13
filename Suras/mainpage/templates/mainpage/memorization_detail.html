@@ -1,0 +1,135 @@
+{% extends "layout/base.html" %}
+{% block title %}Заучивание: {{ Sura.transcript|default:Sura.name }} — Сура{% endblock %}
+{% block eyebrow %}Заучивание · сура {{ Sura.pk }}{% endblock %}
+{% block hero_title %}{{ Sura.transcript|default:Sura.name|default:"Сура" }}{% endblock %}
+{% block hero_description %}Слушайте аят, повторяйте его и отмечайте выученным. Отмечено: {{ memorized_count }} из {{ Ayats|length }}.{% endblock %}
+{% block content %}
+    <div class="page-actions">
+        <a class="text-link" href="{% url 'memorization_index' %}">← Все суры</a>
+        <a class="button button-secondary" href="{% url 'index' %}">Чтение Корана</a>
+    </div>
+
+    <section class="lesson-panel">
+        <form class="range-form" method="get">
+            <p class="eyebrow">Выберите аяты для чтения и аудирования</p>
+            <div class="range-fields">
+                {{ form.begin.label_tag }}
+                {{ form.begin }}
+                {{ form.end.label_tag }}
+                {{ form.end }}
+                <button class="button button-small" type="submit">Показать аяты</button>
+                {% if range_selected %}
+                    <a class="text-link" href="{% url 'memorize_sura' Sura.pk %}">Показать все аяты</a>
+                {% endif %}
+            </div>
+            {{ form.non_field_errors }}
+            {% if range_error %}<p class="source-note" role="status">{{ range_error }}</p>{% endif %}
+        </form>
+
+        <div class="section-heading">
+            <div>
+                {% if range_selected %}
+                    <p class="eyebrow">Выбранные аяты</p>
+                    <h2>Аяты {{ form.cleaned_data.begin }}–{{ form.cleaned_data.end }}</h2>
+                {% else %}
+                    <p class="eyebrow">Практика аудирования</p>
+                    <h2>Слушайте и повторяйте</h2>
+                {% endif %}
+            </div>
+            <label class="repeat-setting">
+                {% if range_selected %}Повторять выбранный диапазон{% else %}Повторять аудио{% endif %}
+                <select data-repeat-control aria-label="Количество повторов аудио">
+                    <option value="1">1 раз</option>
+                    <option value="3" selected>3 раза</option>
+                    <option value="5">5 раз</option>
+                    <option value="10">10 раз</option>
+                    <option value="infinite">Пока не остановлю</option>
+                </select>
+            </label>
+        </div>
+        {% if Sura.audio %}
+            <div class="player-panel">
+                <span>
+                    {% if range_selected and range_audio_start != None and range_audio_end != None %}
+                        Аудиофрагмент: аяты {{ form.cleaned_data.begin }}–{{ form.cleaned_data.end }}
+                    {% elif range_selected %}
+                        Аудио выбранных аятов
+                    {% else %}
+                        Аудиочтение {{ Sura.transcript|default:"суры" }}
+                    {% endif %}
+                </span>
+                <audio
+                    data-segment-player
+                    controls
+                    preload="metadata"
+                    src="{{ Sura.audio.url }}"
+                    {% if range_audio_start != None and range_audio_end != None %}
+                        data-clip-start-ms="{{ range_audio_start }}"
+                        data-clip-end-ms="{{ range_audio_end }}"
+                    {% elif range_selected %}
+                        data-clip-required="true"
+                    {% endif %}
+                >
+                    Браузер не поддерживает аудио.
+                </audio>
+                {% if range_selected and range_audio_start != None and range_audio_end != None %}
+                    <button
+                        class="button button-small"
+                        type="button"
+                        data-audio-url="{{ Sura.audio.url }}"
+                        data-audio-start="{{ range_audio_start }}"
+                        data-audio-end="{{ range_audio_end }}"
+                    >Слушать выбранный фрагмент</button>
+                {% endif %}
+            </div>
+            {% if range_selected and range_audio_start == None %}
+                <p class="source-note" role="status">Для выбранного диапазона не размечены границы аудиофрагмента. Плеер не будет воспроизводить всю суру вместо выбранных аятов.</p>
+            {% endif %}
+        {% else %}
+            <p class="empty-state">Для этой суры аудио пока не загружено.</p>
+            <audio data-segment-player controls preload="metadata" hidden></audio>
+        {% endif %}
+        <p class="source-note" data-audio-status role="status" aria-live="polite"></p>
+
+        <div class="verse-list">
+            {% for Ayat in Ayats %}
+                <article class="verse-card{% if Ayat.is_memorized %} verse-card-done{% endif %}">
+                    <div class="verse-topline">
+                        <span class="verse-number">Аят {{ Ayat.number|default:forloop.counter }}</span>
+                        <div class="verse-actions">
+                            {% if Sura.audio and Ayat.audio_aiyat_begin != None and Ayat.audio_aiyat_end != None %}
+                                <button
+                                    class="button button-small"
+                                    type="button"
+                                    data-audio-url="{{ Sura.audio.url }}"
+                                    data-audio-start="{{ Ayat.audio_aiyat_begin }}"
+                                    data-audio-end="{{ Ayat.audio_aiyat_end }}"
+                                >Слушать аят</button>
+                            {% elif Sura.audio %}
+                                <span class="source-note">Аудиофрагмент для этого аята пока не размечен.</span>
+                            {% endif %}
+                            <form
+                                method="post"
+                                action="{% url 'toggle_memorized_ayat' Sura.pk Ayat.pk %}{% if range_selected %}?begin={{ form.cleaned_data.begin }}&amp;end={{ form.cleaned_data.end }}{% endif %}"
+                            >
+                                {% csrf_token %}
+                                <button class="button button-small button-secondary" type="submit">
+                                    {% if Ayat.is_memorized %}Выучено · отменить{% else %}Отметить выученным{% endif %}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <p class="arabic-text" lang="ar" dir="rtl">{{ Ayat.text|default:"" }}</p>
+                    {% if Ayat.transcript %}<p class="transliteration">{{ Ayat.transcript }}</p>{% endif %}
+                    {% if Ayat.translation %}<p class="translation">{{ Ayat.translation }}</p>{% endif %}
+                </article>
+            {% empty %}
+                <p class="empty-state">В этой суре пока нет аятов для заучивания.</p>
+            {% endfor %}
+        </div>
+    </section>
+{% endblock %}
+{% block scripts %}
+    {% load static %}
+    <script defer src="{% static 'mainpage/js/audio-player.js' %}"></script>
+{% endblock %}

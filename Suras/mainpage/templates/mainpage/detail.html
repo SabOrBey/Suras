@@ -1,34 +1,90 @@
 {% extends "layout/base.html" %}
-{% load static %}
-{% block description %}Слушать читать текст суры {{Sura.transcript}} полностью и по аятам Мишари Рашид бесплатно{% endblock %}
-{% block title %}Сура {{Sura.transcript}}{% endblock %}
-{% block img %}{% endblock %}
+{% block title %}{{ Sura.transcript|default:Sura.name }} — чтение Корана{% endblock %}
+{% block meta_description %}Читайте суру {{ Sura.transcript }} по аятам: арабский текст, транскрипция, перевод и аудио.{% endblock %}
+{% block eyebrow %}Чтение Корана · сура {{ Sura.pk }}{% endblock %}
+{% block hero_title %}{{ Sura.transcript|default:Sura.name|default:"Сура" }}{% endblock %}
+{% block hero_description %}{{ Sura.translation|default:"Читайте и слушайте суру по аятам." }}{% endblock %}
 {% block content %}
-<h2 class="text-center text-white">{{Sura.name|default:""}}</h2>
-<h1 class="text-center text-white">{{Sura.transcript|default:""}}</h1>
-<h3 class="text-center text-white">{{Sura.translation|default:""}}</h3>
-<section class="mainContent text-white">
-    {% for Ayat in Ayats %}
-    {% if Ayat.number == 0 %}
-    <p>{{Ayat.text}}</p>
-    {% else %}
-    <p>{{Ayat.number}}) {{Ayat.text}}</p>
-    {% endif %}
-    {% if Ayat.s_id.audio %}
-    <audio class="audio-control" controls loop src="data:audio/mp3;base64,{{Ayat.audio_aiyat}}" type="audio/mp3">
-        Браузер не поддерживает аудиоэлемент
-    </audio>
-    {% endif %}
-    {% if Ayat.s_id.audio_translation %}
-    <audio class="audio-control" controls loop data-src="{{Ayat.s_id.audio_translation.url}}" type="audio/mp3">
-        Браузер не поддерживает аудиоэлемент
-    </audio>
-    {% endif %}
-    <p>{{Ayat.transcript}}</p>
-    <p>{{Ayat.translation}}</p>
-    <hr>
-    {% endfor %}
-</section>
-<script src="{% static 'mainpage/js/audiostop.js' %}"></script>
-<script src="{% static 'mainpage/js/lazy_loading.js' %}"></script>
+    <div class="page-actions">
+        <a class="text-link" href="{% url 'index' %}">← Все суры</a>
+        <a class="button button-secondary" href="{% url 'memorize_sura' Sura.pk %}">Перейти к заучиванию</a>
+    </div>
+
+    <section class="lesson-panel">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Выучено в этом браузере: {{ memorized_count }}</p>
+                <h2 class="arabic-heading" lang="ar" dir="rtl">{{ Sura.name|default:"" }}</h2>
+            </div>
+        </div>
+        {% if Sura.audio %}
+            <div class="player-panel">
+                <span>Аудиочтение суры</span>
+                <audio data-segment-player controls preload="metadata" src="{{ Sura.audio.url }}">
+                    Браузер не поддерживает аудио.
+                </audio>
+                {% if Sura.audio_translation %}
+                    <button
+                        class="button button-small button-secondary"
+                        type="button"
+                        data-audio-url="{{ Sura.audio_translation.url }}"
+                        data-audio-start="0"
+                        data-audio-end=""
+                    >Слушать перевод суры</button>
+                {% endif %}
+            </div>
+        {% else %}
+            {% if Sura.audio_translation %}
+                <div class="player-panel">
+                    <span>Аудиоперевод суры</span>
+                    <audio data-segment-player controls preload="metadata" src="{{ Sura.audio_translation.url }}">
+                        Браузер не поддерживает аудио.
+                    </audio>
+                </div>
+            {% else %}
+                <audio data-segment-player controls preload="metadata" hidden></audio>
+            {% endif %}
+        {% endif %}
+        <p class="source-note" data-audio-status role="status" aria-live="polite"></p>
+
+        <div class="verse-list">
+            {% for Ayat in Ayats %}
+                <article class="verse-card">
+                    <div class="verse-topline">
+                        <span class="verse-number">Аят {{ Ayat.number|default:forloop.counter }}</span>
+                        {% if Sura.audio and Ayat.audio_aiyat_begin != None and Ayat.audio_aiyat_end != None %}
+                            <button
+                                class="button button-small button-secondary"
+                                type="button"
+                                data-audio-url="{{ Sura.audio.url }}"
+                                data-audio-start="{{ Ayat.audio_aiyat_begin }}"
+                                data-audio-end="{{ Ayat.audio_aiyat_end }}"
+                                aria-label="Слушать аят {{ Ayat.number|default:forloop.counter }}"
+                            >Слушать аят</button>
+                        {% elif Sura.audio %}
+                            <span class="source-note">Аудиофрагмент для этого аята пока не размечен.</span>
+                        {% endif %}
+                    </div>
+                    <p class="arabic-text" lang="ar" dir="rtl">{{ Ayat.text|default:"" }}</p>
+                    {% if Ayat.transcript %}<p class="transliteration">{{ Ayat.transcript }}</p>{% endif %}
+                    {% if Ayat.translation %}<p class="translation">{{ Ayat.translation }}</p>{% endif %}
+                    {% if Sura.audio_translation and Ayat.audio_aiyat_translation_begin != None and Ayat.audio_aiyat_translation_end != None %}
+                        <button
+                            class="text-link audio-link"
+                            type="button"
+                            data-audio-url="{{ Sura.audio_translation.url }}"
+                            data-audio-start="{{ Ayat.audio_aiyat_translation_begin }}"
+                            data-audio-end="{{ Ayat.audio_aiyat_translation_end }}"
+                        >Слушать перевод</button>
+                    {% endif %}
+                </article>
+            {% empty %}
+                <p class="empty-state">В этой суре пока нет добавленных аятов.</p>
+            {% endfor %}
+        </div>
+    </section>
+{% endblock %}
+{% block scripts %}
+    {% load static %}
+    <script defer src="{% static 'mainpage/js/audio-player.js' %}"></script>
 {% endblock %}

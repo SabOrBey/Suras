@@ -1,49 +1,47 @@
 {% load static %}
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="yandex-verification" content="483804ee2624c799" />
-    <meta name="google-site-verification" content="4c3rOBL03AOQyTLYIp1Tao8NoDsfvQgq9zRg3exnNos" />
-    {% block description %}{% endblock %}
+    <meta name="description" content="{% block meta_description %}Читайте Коран по аятам, изучайте хадисы и дуа.{% endblock %}">
+    <meta name="yandex-verification" content="483804ee2624c799">
+    <meta name="google-site-verification" content="4c3rOBL03AOQyTLYIp1Tao8NoDsfvQgq9zRg3exnNos">
     <link rel="icon" href="{% static 'mainpage/img/favicon.ico' %}" type="image/x-icon">
-    <link rel="stylesheet" type="text/css" href="{% static 'mainpage/css/bootstrap.min.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'mainpage/css/eCommerceStyle.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'mainpage/css/style.css' %}">
-    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'mainpage/css/app.css' %}">
+    <title>{% block title %}Сура — изучение Корана{% endblock %}</title>
 </head>
 <body>
-<div id="mainWrapper">
-  <header>
-    <!-- This is the header content. It contains Logo and links -->
-    <div id="logo">
-      <a href="{% url 'index'%}">
-        <img src="{% static 'mainpage/img/favicon.ico' %}" alt="sample logo">
-      </a>
-    </div>
-    <div id="headerLinks">
-      <a href="{% url 'experiment' %}" title="Cart">Редактирование</a>
-    </div>
-  </header>
-  <section id="offer" class="text-center">
-    <!-- The offer section displays a banner text for promotions -->
-    <h1>Изучение священного Корана по Аятам</h1>
-  </section>
-  <div id="content">
-    <section class="mainContent">
-        {% block content %}{% endblock %}
+    <header class="site-header">
+        <a class="brand" href="{% url 'index' %}" aria-label="Сура — главная">
+            <span class="brand-mark" aria-hidden="true">س</span>
+            <span>Сура<span class="brand-caption">Путь к знаниям</span></span>
+        </a>
+        <nav class="site-nav" aria-label="Главная навигация">
+            <a href="{% url 'index' %}">Чтение Корана</a>
+            <a href="{% url 'memorization_index' %}">Заучивание</a>
+            <a href="{% url 'lesson_library' 'hadith' %}">Хадисы</a>
+            <a href="{% url 'lesson_library' 'dua' %}">Дуа</a>
+            <a class="nav-quiet" href="{% url 'experiment' %}">Найти аят</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="hero-inner">
+            <p class="eyebrow">{% block eyebrow %}Знание начинается с одного шага{% endblock %}</p>
+            <h1>{% block hero_title %}Учитесь в своём ритме{% endblock %}</h1>
+            <p class="hero-copy">{% block hero_description %}Читайте, слушайте и возвращайтесь к тому, что хотите запомнить.{% endblock %}</p>
+        </div>
     </section>
-  </div>
-  <footer>
-    <div>
-      <p>Озвучка чтеца Корана - Мишари Рашид Аль-Афаси</p>
-    </div>
-    <div>
-      <p>Перевод Корана - Эмира Кулиева</p>
-    </div>
-  </footer>
-</div>
-</div>
+
+    <main class="page-shell">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <p>Аудиочтение: Мишари Рашид Аль-Афаси. Перевод: Эмира Кулиева.</p>
+        <p>Ваш учебный прогресс хранится в сессии этого браузера.</p>
+    </footer>
+    {% block scripts %}{% endblock %}
 </body>
 </html>
