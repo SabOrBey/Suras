@@ -37,8 +37,8 @@
                 {% endif %}
             </div>
             <label class="repeat-setting">
-                Повторять
-                <select data-repeat-control aria-label="Количество повторов аята">
+                {% if range_selected %}Повторять выбранный диапазон{% else %}Повторять аудио{% endif %}
+                <select data-repeat-control aria-label="Количество повторов аудио">
                     <option value="1">1 раз</option>
                     <option value="3" selected>3 раза</option>
                     <option value="5">5 раз</option>
@@ -50,7 +50,9 @@
             <div class="player-panel">
                 <span>
                     {% if range_selected and range_audio_start != None and range_audio_end != None %}
-                            Аудиофрагмент: аяты {{ form.cleaned_data.begin }}–{{ form.cleaned_data.end }}
+                        Аудиофрагмент: аяты {{ form.cleaned_data.begin }}–{{ form.cleaned_data.end }}
+                    {% elif range_selected %}
+                        Аудио выбранных аятов
                     {% else %}
                         Аудиочтение {{ Sura.transcript|default:"суры" }}
                     {% endif %}
@@ -63,6 +65,8 @@
                     {% if range_audio_start != None and range_audio_end != None %}
                         data-clip-start-ms="{{ range_audio_start }}"
                         data-clip-end-ms="{{ range_audio_end }}"
+                    {% elif range_selected %}
+                        data-clip-required="true"
                     {% endif %}
                 >
                     Браузер не поддерживает аудио.
@@ -78,7 +82,7 @@
                 {% endif %}
             </div>
             {% if range_selected and range_audio_start == None %}
-                <p class="source-note" role="status">Для выбранного диапазона не размечены границы фрагмента. Полная аудиодорожка суры доступна в плеере.</p>
+                <p class="source-note" role="status">Для выбранного диапазона не размечены границы аудиофрагмента. Плеер не будет воспроизводить всю суру вместо выбранных аятов.</p>
             {% endif %}
         {% else %}
             <p class="empty-state">Для этой суры аудио пока не загружено.</p>

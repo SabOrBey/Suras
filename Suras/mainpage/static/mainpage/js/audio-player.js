@@ -9,17 +9,26 @@
     const initialStart = Number(player.dataset.clipStartMs);
     const initialEnd = Number(player.dataset.clipEndMs);
     let clipStart = Number.isFinite(initialStart) ? Math.max(0, initialStart) / 1000 : 0;
-    let clipEnd = player.dataset.clipEndMs !== "" && Number.isFinite(initialEnd)
+    let clipEnd = player.dataset.clipEndMs && Number.isFinite(initialEnd)
         ? Math.max(clipStart, initialEnd / 1000)
         : null;
+    let clipRequired = player.dataset.clipRequired === "true";
     let repeatsRemaining = 0;
     let repeatForever = false;
+    let runInitialized = false;
     let pendingStart = null;
 
     const report = (message) => {
         if (status) {
             status.textContent = message;
         }
+    };
+
+    const initializeRun = () => {
+        const repeatCount = repeatControl ? repeatControl.value : "1";
+        repeatForever = repeatCount === "infinite";
+        repeatsRemaining = repeatForever ? 0 : Math.max(0, Number(repeatCount) - 1);
+        runInitialized = true;
     };
 
     const startClip = () => {
@@ -43,10 +52,8 @@
         clipEnd = button.dataset.audioEnd !== "" && Number.isFinite(endMilliseconds)
             ? Math.max(clipStart, endMilliseconds / 1000)
             : null;
-
-        const repeatCount = repeatControl ? repeatControl.value : "1";
-        repeatForever = repeatCount === "infinite";
-        repeatsRemaining = repeatForever ? 0 : Math.max(0, Number(repeatCount) - 1);
+        clipRequired = false;
+        initializeRun();
 
         if (pendingStart) {
             player.removeEventListener("loadedmetadata", pendingStart);
@@ -87,13 +94,52 @@
         return true;
     };
 
+    const handlePlaybackEnd = () => {
+        if (clipRequired && clipEnd === null) {
+            player.pause();
+            runInitialized = false;
+            report("Для выбранных аятов не размечены границы аудиофрагмента.");
+            return;
+        }
+
+        if (clipEnd !== null && player.currentTime < clipEnd) {
+            return;
+        }
+
+        if (repeatClip()) {
+            return;
+        }
+
+        player.pause();
+        if (clipEnd !== null) {
+            player.currentTime = clipEnd;
+            report("Выбранные аяты прослушаны.");
+        } else {
+            report("Аудио завершено.");
+        }
+        runInitialized = false;
+    };
+
+    player.addEventListener("play", () => {
+        if (!runInitialized) {
+            initializeRun();
+        }
+
+        if (clipRequired && clipEnd === null) {
+            player.pause();
+            runInitialized = false;
+            report("Для выбранных аятов не размечены границы аудиофрагмента.");
+            return;
+        }
+
+        if (clipEnd !== null && (player.currentTime < clipStart || player.currentTime >= clipEnd)) {
+            player.currentTime = clipStart;
+        }
+    });
+
     player.addEventListener("timeupdate", () => {
         if (clipEnd !== null && player.currentTime >= clipEnd) {
-            if (!repeatClip()) {
-                player.pause();
-                player.currentTime = clipEnd;
-                report("Аят прослушан.");
-            }
+            handlePlaybackEnd();
         }
     });
 
@@ -103,24 +149,13 @@
         }
     });
 
-    player.addEventListener("play", () => {
-        if (clipEnd !== null && (player.currentTime < clipStart || player.currentTime >= clipEnd)) {
-            player.currentTime = clipStart;
-        }
-    });
-
     player.addEventListener("seeking", () => {
-        if (clipEnd !== null && (player.currentTime < clipStart || player.currentTime >= clipEnd)) {
+        if (clipEnd !== null && (player.currentTime < clipStart || player.currentTime > clipEnd)) {
             player.currentTime = clipStart;
         }
     });
 
-    player.addEventListener("ended", () => {
-        if (repeatClip()) {
-            return;
-        }
-        report("Аудио завершено.");
-    });
+    player.addEventListener("ended", handlePlaybackEnd);
 
     player.addEventListener("error", () => report("Не удалось загрузить аудиозапись."));
 })();

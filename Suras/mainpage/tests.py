@@ -79,6 +79,8 @@ class LearningPagesTests(TestCase):
         self.assertNotContains(response, "Аят вне выбранного диапазона")
         self.assertContains(response, 'data-clip-start-ms="1500"')
         self.assertContains(response, 'data-clip-end-ms="6700"')
+        self.assertContains(response, "Повторять выбранный диапазон")
+        self.assertContains(response, '<option value="3" selected>3 раза</option>')
         self.assertContains(response, "Слушать выбранный фрагмент")
 
         toggle_url = reverse("toggle_memorized_ayat", args=[self.sura.pk, second_ayat.pk])
@@ -147,10 +149,20 @@ class LearningPagesTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Полная аудиодорожка суры доступна в плеере.")
+        self.assertContains(response, "Плеер не будет воспроизводить всю суру")
         self.assertContains(response, '<div class="player-panel">')
         self.assertContains(response, 'src="/media/audio/001.mp3"')
+        self.assertContains(response, 'data-clip-required="true"')
         self.assertNotContains(response, "Слушать выбранный фрагмент")
+
+    def test_audio_without_selected_range_plays_the_full_surah(self):
+        response = self.client.get(reverse("memorize_sura", args=[self.sura.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Аудиочтение Аль-Фатиха")
+        self.assertContains(response, 'src="/media/audio/001.mp3"')
+        self.assertNotContains(response, "data-clip-start-ms=")
+        self.assertNotContains(response, "data-clip-required=")
 
     def test_reading_page_redirects_to_memorization(self):
         response = self.client.get(reverse("detail", args=[self.sura.pk]))
