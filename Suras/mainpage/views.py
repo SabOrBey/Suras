@@ -59,22 +59,26 @@ def memorize_sura(request, sura_id):
     if form.is_valid():
         begin = form.cleaned_data["begin"]
         end = form.cleaned_data["end"]
-        first_ayat = all_ayats.filter(number=begin).first()
-        last_ayat = all_ayats.filter(number=end).last()
-        if first_ayat is None or last_ayat is None:
+        start_ayat = all_ayats.filter(number=begin).first()
+        end_ayat = all_ayats.filter(number=end).last()
+        if start_ayat is None or end_ayat is None:
             form.add_error(None, "В этой суре не найдены аяты с указанными номерами.")
         else:
             range_selected = True
             ayats = list(all_ayats.filter(number__gte=begin, number__lte=end))
+            audio_start = start_ayat.audio_aiyat_begin
+            if begin == 0 and audio_start is None:
+                audio_start = 0
+            audio_end = end_ayat.audio_aiyat_end
             if (
-                first_ayat.audio_aiyat_begin is None
-                or last_ayat.audio_aiyat_end is None
-                or last_ayat.audio_aiyat_end <= first_ayat.audio_aiyat_begin
+                audio_start is None
+                or audio_end is None
+                or audio_end <= audio_start
             ):
                 range_error = "Для выбранного диапазона не размечены границы аудиофрагмента."
             else:
-                range_audio_start = first_ayat.audio_aiyat_begin
-                range_audio_end = last_ayat.audio_aiyat_end
+                range_audio_start = audio_start
+                range_audio_end = audio_end
     else:
         ayats = list(all_ayats)
 

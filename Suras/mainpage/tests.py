@@ -96,7 +96,6 @@ class LearningPagesTests(TestCase):
             s_id=self.sura,
             number=0,
             text="بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
-            audio_aiyat_begin=0,
             audio_aiyat_end=1500,
         )
 
